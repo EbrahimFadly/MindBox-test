@@ -1,0 +1,47 @@
+# 4 реплики для пикового трафика, распределение по нодам для отказоустойчивости
+# Ресурсы и проверки учтены под старт приложения 5–10 секунд
+
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mindbox-deployment
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: mindbox-app
+  template:
+    metadata:
+      labels:
+        app: mindbox-app
+    spec:
+      containers:
+        image: mindbox-app:1.0
+        name: mindbox-app
+        resources:
+          limits:
+            cpu: "1000m"
+            memory: "512Mi"
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 10 
+          periodSeconds: 5
+        readinessProbe:
+            httpGet:
+              path: /api/readycheck
+              port: 80
+            initialDelaySeconds: 10 # готовность к приему трафика
+            periodSeconds: 5
+      topologySpreadConstraints:
+        - maxSkew: 1 # Распределение 4х подов по 3 зонам
+          topologyKey: "kubernetes.io/hostname"
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: mindbox-app

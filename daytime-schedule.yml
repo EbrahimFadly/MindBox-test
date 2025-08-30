@@ -1,0 +1,18 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: scale-up
+spec:
+  schedule: "0 8 * * *" # запуск каждый день в 08:00
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: scale-up
+            image: k8s.gcr.io/kubectl:latest # образ с kubectl
+            command:
+              - /bin/sh
+              - -c
+              - kubectl scale deployment mindbox-deployment --replicas=4
+          restartPolicy: OnFailure
